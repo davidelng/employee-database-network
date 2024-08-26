@@ -7,6 +7,7 @@
 #include "file.h"
 #include "parse.h"
 
+// print a unix-like help message
 void print_usage(char *argv[]) {
 	printf("Usage: %s -n -f <database file>\n", argv[0]);
 	printf("\t -n  - create new database file\n");
@@ -20,12 +21,12 @@ int main(int argc, char *argv[]) {
 	bool newfile = false;
 	int c;
 
-	int dbfd = -1;
-	struct dbheader_t *dbhdr = NULL;
+	int dbfd = -1; // -1 so we do not use it incorrectly as file descriptor
+	struct dbheader_t *dbhdr = NULL; // we pass this between files of our program
 
 	while ((c = getopt(argc, argv, "nf:")) != -1) {
 		switch(c) {
-			case 'n':
+			case 'n': // single quotes because they are char and not a string literals (array of chars)
 				newfile = true;
 				break;
 			case 'f':

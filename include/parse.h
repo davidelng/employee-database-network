@@ -1,10 +1,10 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#define HEADER_MAGIC 0x4c4c4144
+#define HEADER_MAGIC 0x4c4c4144 //LLAD
 
 struct dbheader_t {
-	unsigned int magic;
+	unsigned int magic; // it's a "secret" value that we use to identify our file so we know that we can parse it
 	unsigned short version;
 	unsigned short count;
 	unsigned int filesize;

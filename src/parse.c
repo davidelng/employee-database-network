@@ -69,7 +69,7 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
 	header->filesize = ntohl(header->filesize);
 
 	if (header->magic != HEADER_MAGIC) {
-		printf("Improper header version\n");
+		printf("Improper header value\n");
 		free(header);
 		return -1;
 	}
@@ -82,6 +82,8 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
 
 	struct stat dbstat = {0};
 	fstat(fd, &dbstat);
+	// we read from the file the length of our struct
+	// if the length of our struct is not the length of the actual file something is wrong
 	if (header->filesize != dbstat.st_size) {
 		printf("Corrupted database\n");
 		free(header);
@@ -94,17 +96,21 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
 }
 
 int create_db_header(int fd, struct dbheader_t **headerOut) {
+	// allocate a chunk of memory for the file header
 	struct dbheader_t *header = calloc(1, sizeof(struct dbheader_t));
 	if (header == NULL) {
 		printf("Calloc failed to create db header\n");
 		return STATUS_ERROR;
 	}
 
+	// fill the struct with the first info in the file
 	header->version = 0x1;
 	header->count = 0;
-	header->magic = HEADER_MAGIC; //LLAD
+	header->magic = HEADER_MAGIC;
 	header->filesize = sizeof(struct dbheader_t);
 
+	// set the struct pointer in main to point to the newly created struct
+	// we need a double pointer for this
 	*headerOut = header;
 
 	return STATUS_SUCCESS;
