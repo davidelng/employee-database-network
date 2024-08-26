@@ -22,8 +22,25 @@ int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employe
 
 }
 
-int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) {
+int output_file(int fd, struct dbheader_t *dbhdr) { 
+	if (fd < 0) {
+		printf("Got a bad FD from the user\n");
+		return STATUS_ERROR;
+	}
 
+	// host to network (hton) is needed because of endiness
+	dbhdr->magic = htonl(dbhdr->magic);
+	dbhdr->filesize = htonl(dbhdr->filesize);
+	dbhdr->count = htons(dbhdr->count);
+	dbhdr->version = htons(dbhdr->version);
+
+	// now that the file is open if we write to it we would append at the end
+	// so we need to put the cursor to the start of the file
+	lseek(fd, 0, SEEK_SET);
+
+	write(fd, dbhdr, sizeof(struct dbheader_t));
+	
+	return STATUS_SUCCESS;
 }	
 
 int validate_db_header(int fd, struct dbheader_t **headerOut) {
