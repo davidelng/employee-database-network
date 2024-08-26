@@ -9,6 +9,7 @@ run: clean default
 default: $(TARGET)
 
 clean:
+	mkdir -p obj bin
 	rm -f obj/*.o
 	rm -f bin/*
 	rm -f *.db
