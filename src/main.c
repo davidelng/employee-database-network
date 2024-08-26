@@ -1,7 +1,7 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <getopt.h>
-#include <stdlib.h>
+#include <stdio.h> // standard I/O like "open" and "printf"
+#include <stdbool.h> // create a bool type that is basically 0 and 1
+#include <getopt.h> // getopt library to create a cli
+#include <stdlib.h> // standard library with "atoi", NULL, etc
 
 #include "common.h"
 #include "file.h"
@@ -17,20 +17,26 @@ void print_usage(char *argv[]) {
 
 int main(int argc, char *argv[]) { 
 
-	char *filepath = NULL;
-	bool newfile = false;
 	int c;
+	bool newfile = false;
+	char *filepath = NULL;
+	char *addstring = NULL;
 
 	int dbfd = -1; // -1 so we do not use it incorrectly as file descriptor
 	struct dbheader_t *dbhdr = NULL; // we pass this between files of our program
+	struct employee_t *employees = NULL; // same here
 
-	while ((c = getopt(argc, argv, "nf:")) != -1) {
+	// add a colon to the flag if it has data (optarg)
+	while ((c = getopt(argc, argv, "nf:a:")) != -1) {
 		switch(c) {
 			case 'n': // single quotes because they are char and not a string literals (array of chars)
 				newfile = true;
 				break;
 			case 'f':
 				filepath = optarg;
+				break;
+			case 'a':
+				addstring = optarg;
 				break;
 			case '?':
 				printf("Unknown option -%c\n", c);
@@ -70,10 +76,19 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	printf("Newfile: %d\n", newfile);
-	printf("Filepath: %s\n", filepath);
+	if (read_employees(dbfd, dbhdr, &employees) != STATUS_SUCCESS) {
+		printf("Failed to read employees\n");
+		return 0;
+	}
 
-	output_file(dbfd, dbhdr);
+	if (addstring) {
+		// if we add an employee we have to allocate new memory for it
+		dbhdr->count++;
+		employees = realloc(employees, dbhdr->count*(sizeof(struct employee_t)));
+		add_employee(dbhdr, employees, addstring);
+	}
+
+	output_file(dbfd, dbhdr, employees);
 
 	return 0;
 }

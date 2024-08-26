@@ -1,11 +1,10 @@
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <string.h>
+#include <arpa/inet.h> // "hton" and "ntoh" (see below)
+#include <sys/types.h> // types like "size_t"
+#include <sys/stat.h> // stats about file like "fstat"
+#include <unistd.h> // access posix API like "read"
+#include <string.h> // manipulate array of chars
 
 #include "common.h"
 #include "parse.h"
@@ -15,22 +14,61 @@ void list_employees(struct dbheader_t *dbhdr, struct employee_t *employees) {
 }
 
 int add_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *addstring) {
+	printf("%s\n", addstring);
 
+	// strtok gets tokens from a string and keeps track internally of the position
+	// thus can be called with NULL to operate on the same string as before
+	char *name = strtok(addstring, ",");
+	char *addr = strtok(NULL, ",");
+	char *hours = strtok(NULL, ",");
+
+	// strncpy to safely copy our data into the in-memory struct
+	strncpy(employees[dbhdr->count-1].name, name, sizeof(employees[dbhdr->count-1].name));
+	strncpy(employees[dbhdr->count-1].address, addr, sizeof(employees[dbhdr->count-1].address));
+
+	// convert ascii to int
+	employees[dbhdr->count-1].hours = atoi(hours);
+
+	return STATUS_SUCCESS;
 }
 
 int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employeesOut) {
-
-}
-
-int output_file(int fd, struct dbheader_t *dbhdr) { 
 	if (fd < 0) {
 		printf("Got a bad FD from the user\n");
 		return STATUS_ERROR;
 	}
 
+	int count = dbhdr->count;
+
+	struct employee_t *employees = calloc(count, sizeof(struct employee_t));
+	if (employees == NULL) {
+		printf("Calloc failed\n");
+		return STATUS_ERROR;
+	}
+
+	// we already read the header so the cursor in the file is set to the employees
+	read(fd, employees, count*sizeof(struct employee_t));
+
+	int i = 0;
+	for (; i < count; i++) {
+		employees[i].hours = ntohl(employees[i].hours);
+	}
+
+	*employeesOut = employees;
+	return STATUS_SUCCESS;
+}
+
+int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) { 
+	if (fd < 0) {
+		printf("Got a bad FD from the user\n");
+		return STATUS_ERROR;
+	}
+
+	int realCount = dbhdr->count;
+
 	// host to network (hton) is needed because of endiness
 	dbhdr->magic = htonl(dbhdr->magic);
-	dbhdr->filesize = htonl(dbhdr->filesize);
+	dbhdr->filesize = htonl(sizeof(struct dbheader_t) + (sizeof(struct employee_t)*realCount));
 	dbhdr->count = htons(dbhdr->count);
 	dbhdr->version = htons(dbhdr->version);
 
@@ -39,6 +77,13 @@ int output_file(int fd, struct dbheader_t *dbhdr) {
 	lseek(fd, 0, SEEK_SET);
 
 	write(fd, dbhdr, sizeof(struct dbheader_t));
+
+	int i = 0;
+	// we have to use the count value before htons
+	for (; i < realCount; i++) {
+		employees[i].hours = htonl(employees[i].hours);
+		write(fd, &employees[i], sizeof(struct employee_t));
+	}
 	
 	return STATUS_SUCCESS;
 }	
