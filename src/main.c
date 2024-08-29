@@ -15,9 +15,9 @@ void print_usage(char *argv[]) {
 	printf("\t -n  create new database file\n");
 	printf("\t -f  <filepath> (required) path to database file\n");
 	printf("\t -l  list all employees\n");
-    printf("\t -a  <name,address,hours> add a new employee\n");
-    printf("\t -u  <id,hours> update hours for employee\n");
-    printf("\t -d  <id> delete an employee\n");
+	printf("\t -a  <name,address,hours> add a new employee\n");
+	printf("\t -u  <id,hours> update hours for employee\n");
+	printf("\t -d  <id> delete an employee\n");
 	return;
 }
 
@@ -28,8 +28,8 @@ int main(int argc, char* argv[]) {
 	char* filepath = NULL;
 	bool list = false;
 	char* addstring = NULL;
-    char* updatestring = NULL;
-    unsigned int deleteID = 0;
+	char* updatestring = NULL;
+	unsigned int deleteID = 0;
 
 	int dbfd = -1; // -1 so we do not use it incorrectly as file descriptor
 	dbheader* dbhdr = NULL; // we pass this between files of our program
@@ -44,17 +44,17 @@ int main(int argc, char* argv[]) {
 			case 'f':
 				filepath = optarg;
 				break;
-            case 'l':
-                list = true;
-                break;
-            case 'a':
-                addstring = optarg;
-                break;
-            case 'u':
-                updatestring = optarg;
-                break;
-            case 'd':
-                deleteID = atoi(optarg);
+			case 'l':
+				list = true;
+				break;
+			case 'a':
+				addstring = optarg;
+				break;
+			case 'u':
+				updatestring = optarg;
+				break;
+			case 'd':
+				deleteID = atoi(optarg);
 				break;
 			case '?':
 				printf("Unknown option -%c\n", c);
@@ -104,41 +104,37 @@ int main(int argc, char* argv[]) {
 
 	if (addstring != NULL) {
 		// if we add an employee we have to allocate new memory for it
-       	dbhdr->lastID++;
-        dbhdr->count++;
+		dbhdr->lastID++;
+		dbhdr->count++;
 		employees = realloc(employees, dbhdr->count*(sizeof(employee)));
 		if (employees == NULL) {
-            printf("Realloc failed\n");
-            return -1;
-        }
+			printf("Realloc failed\n");
+			return -1;
+		}
 		if (add_employee(dbhdr, employees, addstring) != STATUS_SUCCESS) {
-            printf("Couldn't add employee\n");
-            return -1;
-        }
+			printf("Couldn't add employee\n");
+			return -1;
+		}
 	}
 
-	if (updatestring != NULL) {
-        if (update_employee(dbhdr, employees, updatestring) != STATUS_SUCCESS) {
+	if (updatestring != NULL && update_employee(dbhdr, employees, updatestring) != STATUS_SUCCESS) {
             printf("Couldn't update employee\n");
             return -1;
         }
-    }
 
-	if (deleteID > 0) {
-        if (delete_employee(dbhdr, &employees, deleteID) != STATUS_SUCCESS) {
+	if (deleteID > 0 && delete_employee(dbhdr, &employees, deleteID) != STATUS_SUCCESS) {
             printf("Couldn't delete employee\n");
             return -1;
         }
-    }
 
 	if (list) {
 		list_employees(dbhdr, employees);
 	}
 
-    if (output_file(filepath, dbhdr, employees) != STATUS_SUCCESS) {
-        printf("Couldn't write to file\n");
-        return -1;
-    }
+	if (output_file(filepath, dbhdr, employees) != STATUS_SUCCESS) {
+		printf("Couldn't write to file\n");
+		return -1;
+	}
 
 	return 0;
 }
