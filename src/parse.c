@@ -133,8 +133,8 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
 
 	struct stat dbstat = {0};
 	fstat(fd, &dbstat);
-	// we read from the file the length of our struct
-	// if the length of our struct is not the length of the actual file something is wrong
+	// we read from the file the length specified in our header struct
+	// if it does not match the actual length of the file something went wrong
 	if (header->filesize != dbstat.st_size) {
 		printf("Corrupted database\n");
 		free(header);
