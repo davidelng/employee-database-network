@@ -136,5 +136,12 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
+	if (dbhdr != NULL) {
+		free(dbhdr);
+	}
+	if (employees != NULL) {
+		free(employees);
+	}
+
 	return 0;
 }
