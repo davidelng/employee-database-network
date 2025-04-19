@@ -1,5 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -10,7 +8,7 @@
 
 #include "srvpoll.h"
 
-void handle_client_fsm(dbheader* dbhdr, employee* employees, clientstate_t* client) {
+void handle_client_fsm(dbheader_t* dbhdr, employee_t* employees, clientstate_t* client) {
 	dbproto_hdr_t* hdr = (dbproto_hdr_t*)client->buffer;
 
 	if (client->state == STATE_HELLO) {
@@ -47,4 +45,3 @@ int find_slot_by_fd(clientstate_t* states, int fd) {
 	}
 	return -1;
 }
-

@@ -29,6 +29,6 @@ int find_free_slot(clientstate_t* states);
 
 int find_slot_by_fd(clientstate_t* states, int fd);
 
-void handle_client_fsm(dbheader* dbhdr, employee* employees, clientstate_t* client);
+void handle_client_fsm(dbheader_t* dbhdr, employee_t* employees, clientstate_t* client);
 
 #endif
