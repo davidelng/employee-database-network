@@ -11,9 +11,9 @@
 #include "common.h"
 #include "parse.h"
 
-int create_db_header(dbheader **headerOut) {
+int create_db_header(dbheader_t** headerOut) {
 	// allocate a chunk of memory for the file header
-	dbheader *header = calloc(1, sizeof(dbheader));
+	dbheader_t* header = calloc(1, sizeof(dbheader_t));
 	if (header == NULL) {
 		printf("Calloc failed to create db header\n");
 		return STATUS_ERROR;
@@ -22,7 +22,7 @@ int create_db_header(dbheader **headerOut) {
 	// fill the struct with the first info in the file
 	header->magic = HEADER_MAGIC;
 	header->version = HEADER_VERSION;
-	header->filesize = sizeof(dbheader);
+	header->filesize = sizeof(dbheader_t);
 	header->count = 0;
 	header->lastID = 0;
 
@@ -33,19 +33,19 @@ int create_db_header(dbheader **headerOut) {
 	return STATUS_SUCCESS;
 }
 
-int validate_db_header(int fd, dbheader **headerOut) {
+int validate_db_header(int fd, dbheader_t** headerOut) {
 	if (fd < 0) {
 		printf("Got a bad FD from the user\n");
 		return STATUS_ERROR;
 	}
 
-	dbheader *header = calloc(1, sizeof(dbheader));
+	dbheader_t* header = calloc(1, sizeof(dbheader_t));
 	if (header == NULL) {
 		printf("Calloc failed to create db header\n");
 		return STATUS_ERROR;
 	}
 
-	if (read(fd, header, sizeof(dbheader)) != sizeof(dbheader)) {
+	if (read(fd, header, sizeof(dbheader_t)) != sizeof(dbheader_t)) {
 		perror("read");
 		free(header);
 		return STATUS_ERROR;
@@ -91,7 +91,7 @@ int validate_db_header(int fd, dbheader **headerOut) {
 	return STATUS_SUCCESS;
 }
 
-int output_file(char *filepath, dbheader *dbhdr, employee *employees) {
+int output_file(char* filepath, dbheader_t* dbhdr, employee_t* employees) {
 	char temp[256];
 	if (snprintf(temp, sizeof(temp), "%s.temp", filepath) < 0) {
 		perror("snprintf");
@@ -108,7 +108,7 @@ int output_file(char *filepath, dbheader *dbhdr, employee *employees) {
 
 	// host to network (hton) is needed because of endiness
 	dbhdr->magic = htonl(dbhdr->magic);
-	dbhdr->filesize = htonl(sizeof(dbheader) + (sizeof(employee) * realCount));
+	dbhdr->filesize = htonl(sizeof(dbheader_t) + (sizeof(employee_t) * realCount));
 	dbhdr->count = htons(dbhdr->count);
 	dbhdr->version = htons(dbhdr->version);
 	dbhdr->lastID = htonl(dbhdr->lastID);
@@ -120,7 +120,7 @@ int output_file(char *filepath, dbheader *dbhdr, employee *employees) {
 		return STATUS_ERROR;
 	}
 
-	if (write(fd, dbhdr, sizeof(dbheader)) != sizeof(dbheader)) {
+	if (write(fd, dbhdr, sizeof(dbheader_t)) != sizeof(dbheader_t)) {
 		perror("write");
 		return STATUS_ERROR;
 	}
@@ -128,7 +128,7 @@ int output_file(char *filepath, dbheader *dbhdr, employee *employees) {
 	// we have to use the count value before htons
 	for (int i = 0; i < realCount; i++) {
 		employees[i].hours = htonl(employees[i].hours);
-		if (write(fd, &employees[i], sizeof(employee)) != sizeof(employee)) {
+		if (write(fd, &employees[i], sizeof(employee_t)) != sizeof(employee_t)) {
 			perror("write");
 			return STATUS_ERROR;
 		}
@@ -142,13 +142,13 @@ int output_file(char *filepath, dbheader *dbhdr, employee *employees) {
 	return STATUS_SUCCESS;
 }
 
-int read_employees(int fd, dbheader *dbhdr, employee **employeesOut) {
+int read_employees(int fd, dbheader_t* dbhdr, employee_t** employeesOut) {
 	if (fd < 0) {
 		printf("Got a bad FD from the user\n");
 		return STATUS_ERROR;
 	}
 
-	employee *employees = calloc(dbhdr->count, sizeof(employee));
+	employee_t* employees = calloc(dbhdr->count, sizeof(employee_t));
 	if (employees == NULL) {
 		printf("Calloc failed\n");
 		return STATUS_ERROR;
@@ -156,7 +156,7 @@ int read_employees(int fd, dbheader *dbhdr, employee **employeesOut) {
 
 	if (dbhdr->count > 0) {
 		// we already read the header so the cursor in the file is set to the employees
-		if (read(fd, employees, dbhdr->count * sizeof(employee)) != dbhdr->count * sizeof(employee)) {
+		if (read(fd, employees, dbhdr->count * sizeof(employee_t)) != dbhdr->count * sizeof(employee_t)) {
 			perror("read");
 			free(employees);
 			return STATUS_ERROR;
@@ -171,14 +171,14 @@ int read_employees(int fd, dbheader *dbhdr, employee **employeesOut) {
 	return STATUS_SUCCESS;
 }
 
-int add_employee(dbheader *dbhdr, employee *employees, char *addstring) {
+int add_employee(dbheader_t* dbhdr, employee_t* employees, char* addstring) {
 	printf("Adding %s\n", addstring);
 
 	// strtok gets tokens from a string and keeps track internally of the position
 	// thus can be called with NULL to operate on the same string as before
-	char *name = strtok(addstring, ",");
-	char *addr = strtok(NULL, ",");
-	char *hours = strtok(NULL, ",");
+	char* name = strtok(addstring, ",");
+	char* addr = strtok(NULL, ",");
+	char* hours = strtok(NULL, ",");
 
 	if (name == NULL || addr == NULL || hours == NULL) {
 		printf("Missing params\n");
@@ -195,9 +195,9 @@ int add_employee(dbheader *dbhdr, employee *employees, char *addstring) {
 	return STATUS_SUCCESS;
 }
 
-int update_employee(dbheader *dbhdr, employee *employees, char *updatestring) {
-	char *stringID = strtok(updatestring, ",");
-	char *hours = strtok(NULL, ",");
+int update_employee(dbheader_t* dbhdr, employee_t* employees, char* updatestring) {
+	char* stringID = strtok(updatestring, ",");
+	char* hours = strtok(NULL, ",");
 
 	if (stringID == NULL || hours == NULL) {
 		printf("Missing params\n");
@@ -216,7 +216,7 @@ int update_employee(dbheader *dbhdr, employee *employees, char *updatestring) {
 	return STATUS_SUCCESS;
 }
 
-int delete_employee(dbheader *dbhdr, employee **employeesOut, unsigned int deleteID) {
+int delete_employee(dbheader_t* dbhdr, employee_t** employeesOut, unsigned int deleteID) {
 	bool found = false;
 	for (int i = 0; i < dbhdr->count; i++) {
 		if ((*employeesOut)[i].ID == deleteID) {
@@ -231,7 +231,7 @@ int delete_employee(dbheader *dbhdr, employee **employeesOut, unsigned int delet
 	}
 
 	dbhdr->count--;
-	employee *newEmployees = calloc(dbhdr->count, sizeof(employee));
+	employee_t* newEmployees = calloc(dbhdr->count, sizeof(employee_t));
 	if (newEmployees == NULL) {
 		printf("Calloc failed\n");
 		return STATUS_ERROR;
@@ -260,7 +260,7 @@ int delete_employee(dbheader *dbhdr, employee **employeesOut, unsigned int delet
 	return STATUS_SUCCESS;
 }
 
-void list_employees(dbheader *dbhdr, employee *employees) {
+void list_employees(dbheader_t* dbhdr, employee_t* employees) {
 	for (int i = 0; i < dbhdr->count; i++) {
 		printf("Employee %d\n", employees[i].ID);
 		printf("\tName: %s\n", employees[i].name);
