@@ -151,6 +151,7 @@ void poll_loop(unsigned short port, dbheader_t* dbheader, employee_t* employees)
 int main(int argc, char* argv[]) { 
 
 	int c = 0;
+	int port = 8080;
 	bool newfile = false;
 	char* filepath = NULL;
 	bool list = false;
@@ -257,6 +258,8 @@ int main(int argc, char* argv[]) {
 	if (list) {
 		list_employees(dbhdr, employees);
 	}
+
+	poll_loop(port, dbhdr, employees);
 
 	if (output_file(filepath, dbhdr, employees) != STATUS_SUCCESS) {
 		printf("Couldn't write to file\n");
