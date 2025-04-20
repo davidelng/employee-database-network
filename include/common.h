@@ -37,4 +37,16 @@ typedef struct {
 	uint8_t data[1024];
 } dbproto_employee_add_req;
 
+typedef struct {
+} dbproto_employee_add_resp;
+
+typedef struct {
+} dbproto_employee_list_req;
+
+typedef struct {
+	char name[256];
+	char address[256];
+	unsigned short hours;
+} dbproto_employee_list_resp;
+
 #endif

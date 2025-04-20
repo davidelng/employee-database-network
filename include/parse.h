@@ -22,8 +22,8 @@ typedef struct {
 int create_db_header(dbheader_t** headerOut);
 int validate_db_header(int fd, dbheader_t** headerOut);
 int read_employees(int fd, dbheader_t* dbhdr, employee_t** employeesOut);
-int output_file(char* filepath, dbheader_t* dbhdr, employee_t* employees);
-int add_employee(dbheader_t* dbhdr, employee_t* employees, char* addstring);
+int output_file(int fd, dbheader_t* dbhdr, employee_t* employees);
+int add_employee(dbheader_t* dbhdr, employee_t** employees, char* addstring);
 int update_employee(dbheader_t* dbhdr, employee_t* employees, char* updatestring);
 int delete_employee(dbheader_t* dbhdr, employee_t** employeesOut, unsigned int deleteID);
 void list_employees(dbheader_t* dbhdr, employee_t* employees);

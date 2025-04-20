@@ -91,16 +91,9 @@ int validate_db_header(int fd, dbheader_t** headerOut) {
 	return STATUS_SUCCESS;
 }
 
-int output_file(char* filepath, dbheader_t* dbhdr, employee_t* employees) {
-	char temp[256];
-	if (snprintf(temp, sizeof(temp), "%s.temp", filepath) < 0) {
-		perror("snprintf");
-		return STATUS_ERROR;
-	}
-	int fd = open(temp, O_RDWR | O_CREAT, 0644);
-	if (fd < 0) {
-		printf("Couldn't create temp file\n");
-		perror("open");
+int output_file(int fd, dbheader_t* dbhdr, employee_t* employees) {
+	if (fd <= 0) {
+		printf("Got a bad FD from the user\n");
 		return STATUS_ERROR;
 	}
 
@@ -132,12 +125,14 @@ int output_file(char* filepath, dbheader_t* dbhdr, employee_t* employees) {
 			perror("write");
 			return STATUS_ERROR;
 		}
+		employees[i].hours = ntohl(employees[i].hours);
 	}
 
-	if (rename(temp, filepath) < 0) {
-		perror("rename");
-		return STATUS_ERROR;
-	}
+	dbhdr->magic = ntohl(dbhdr->magic);
+	dbhdr->filesize = ntohl(sizeof(dbheader_t) + (sizeof(employee_t) * realCount));
+	dbhdr->count = ntohs(dbhdr->count);
+	dbhdr->version = ntohs(dbhdr->version);
+	dbhdr->lastID = ntohl(dbhdr->lastID);
 
 	return STATUS_SUCCESS;
 }
@@ -171,19 +166,30 @@ int read_employees(int fd, dbheader_t* dbhdr, employee_t** employeesOut) {
 	return STATUS_SUCCESS;
 }
 
-int add_employee(dbheader_t* dbhdr, employee_t* employees, char* addstring) {
+int add_employee(dbheader_t* dbhdr, employee_t** employeeptr, char* addstring) {
 	printf("Adding %s\n", addstring);
 
 	// strtok gets tokens from a string and keeps track internally of the position
 	// thus can be called with NULL to operate on the same string as before
 	char* name = strtok(addstring, ",");
-	char* addr = strtok(NULL, ",");
-	char* hours = strtok(NULL, ",");
-
-	if (name == NULL || addr == NULL || hours == NULL) {
-		printf("Missing params\n");
+	if (name == NULL) {
 		return STATUS_ERROR;
 	}
+
+	char* addr = strtok(NULL, ",");
+	if (addr == NULL) {
+		return STATUS_ERROR;
+	}
+
+	char* hours = strtok(NULL, ",");
+	if (hours == NULL || atoi(hours) == 0) {
+		return STATUS_ERROR;
+	}
+
+	dbhdr->lastID++;
+	dbhdr->count++;
+	*employeeptr = realloc(*employeeptr, dbhdr->count*(sizeof(employee_t)));
+	employee_t* employees = *employeeptr;
 
 	employees[dbhdr->count-1].ID = dbhdr->lastID;
 	// convert ascii to int

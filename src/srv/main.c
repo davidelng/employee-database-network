@@ -30,7 +30,7 @@ void print_usage(char* argv[]) {
 	return;
 }
 
-void poll_loop(unsigned short port, dbheader_t* dbhdr, employee_t* employees) {
+void poll_loop(unsigned short port, dbheader_t* dbhdr, int dbfd, employee_t* employees) {
 	// listen_fd -> fd creato per accettare la chiamata
 	// conn_fd -> quando accettiamo, salviamo qui temporaneamente il fd
 	// freeSlot -> prossimo slot disponibile
@@ -139,7 +139,7 @@ void poll_loop(unsigned short port, dbheader_t* dbhdr, employee_t* employees) {
 						nfds--;
 					}
 				} else {
-					handle_client_fsm(dbhdr, employees, &clientStates[slot]);
+					handle_client_fsm(dbhdr, dbfd, &employees, &clientStates[slot]);
 				}
 			}
 		}
@@ -152,35 +152,19 @@ int main(int argc, char* argv[]) {
 	int port = 5555;
 	bool newfile = false;
 	char* filepath = NULL;
-	bool list = false;
-	char* addstring = NULL;
-	char* updatestring = NULL;
-	unsigned int deleteID = 0;
 
 	int dbfd = -1; // -1 so we do not use it incorrectly as file descriptor
 	dbheader_t* dbhdr = NULL; // we pass this between files of our program
 	employee_t* employees = NULL; // same here
 
 	// add a colon to the flag if it has data (optarg)
-	while ((c = getopt(argc, argv, "nf:la:u:d:p:")) != -1) {
+	while ((c = getopt(argc, argv, "nf:p:")) != -1) {
 		switch(c) {
 			case 'n': // single quotes because they are char and not a string literals (array of chars)
 				newfile = true;
 				break;
 			case 'f':
 				filepath = optarg;
-				break;
-			case 'l':
-				list = true;
-				break;
-			case 'a':
-				addstring = optarg;
-				break;
-			case 'u':
-				updatestring = optarg;
-				break;
-			case 'd':
-				deleteID = atoi(optarg);
 				break;
 			case 'p':
 				port = atoi(optarg);
@@ -231,48 +215,7 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 
-	if (addstring != NULL) {
-		// if we add an employee we have to allocate new memory for it
-		dbhdr->lastID++;
-		dbhdr->count++;
-		employees = realloc(employees, dbhdr->count*(sizeof(employee_t)));
-		if (employees == NULL) {
-			printf("Realloc failed\n");
-			return -1;
-		}
-		if (add_employee(dbhdr, employees, addstring) != STATUS_SUCCESS) {
-			printf("Couldn't add employee\n");
-			return -1;
-		}
-	}
-
-	if (updatestring != NULL && update_employee(dbhdr, employees, updatestring) != STATUS_SUCCESS) {
-            printf("Couldn't update employee\n");
-            return -1;
-        }
-
-	if (deleteID > 0 && delete_employee(dbhdr, &employees, deleteID) != STATUS_SUCCESS) {
-            printf("Couldn't delete employee\n");
-            return -1;
-        }
-
-	if (list) {
-		list_employees(dbhdr, employees);
-	}
-
-	poll_loop(port, dbhdr, employees);
-
-	if (output_file(filepath, dbhdr, employees) != STATUS_SUCCESS) {
-		printf("Couldn't write to file\n");
-		return -1;
-	}
-
-	if (dbhdr != NULL) {
-		free(dbhdr);
-	}
-	if (employees != NULL) {
-		free(employees);
-	}
+	poll_loop(port, dbhdr, dbfd, employees);
 
 	return 0;
 }
