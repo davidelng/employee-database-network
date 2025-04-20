@@ -16,6 +16,7 @@ default: $(TARGET_SRV) $(TARGET_CLI)
 
 clean:
 	rm -f obj/srv/*.o
+	rm -f obj/cli/*.o
 	rm -f bin/*
 	rm -f *.db
 

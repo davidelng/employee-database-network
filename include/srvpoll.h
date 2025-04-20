@@ -5,7 +5,6 @@
 #include <poll.h>
 
 #define MAX_CLIENTS 256
-#define PORT 8080
 #define BUFF_SIZE 4096
 
 typedef enum {

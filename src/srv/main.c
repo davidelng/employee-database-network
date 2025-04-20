@@ -16,8 +16,6 @@
 #include "parse.h"
 #include "srvpoll.h"
 
-#define MAX_CLIENTS 256
-
 clientstate_t clientStates[MAX_CLIENTS] = {0};
 
 // print a unix-like help message
@@ -32,7 +30,7 @@ void print_usage(char* argv[]) {
 	return;
 }
 
-void poll_loop(unsigned short port, dbheader_t* dbheader, employee_t* employees) {
+void poll_loop(unsigned short port, dbheader_t* dbhdr, employee_t* employees) {
 	// listen_fd -> fd creato per accettare la chiamata
 	// conn_fd -> quando accettiamo, salviamo qui temporaneamente il fd
 	// freeSlot -> prossimo slot disponibile
@@ -73,12 +71,12 @@ void poll_loop(unsigned short port, dbheader_t* dbheader, employee_t* employees)
 		exit(EXIT_FAILURE);
 	}
 
-	init_clients();
+	init_clients(clientStates);
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = listen_fd;
 	fds[0].events = POLLIN;
 
-	printf("Server listening on port %d\n", PORT);
+	printf("Server listening on port %d\n", port);
 	
 	while(1) {
 		// add active connections to read set
@@ -108,7 +106,7 @@ void poll_loop(unsigned short port, dbheader_t* dbheader, employee_t* employees)
 
 			printf("New connection from %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 		
-			freeSlot = find_free_slot();
+			freeSlot = find_free_slot(clientStates);
 			if (freeSlot == -1) {
 				printf("Server full: closing new connections\n");
 				close(conn_fd);
@@ -128,7 +126,7 @@ void poll_loop(unsigned short port, dbheader_t* dbheader, employee_t* employees)
 				n_events--;
 
 				int fd = fds[i].fd;
-				int slot = find_slot_by_fd(fd);
+				int slot = find_slot_by_fd(clientStates, fd);
 				ssize_t bytes_read = read(fd, &clientStates[slot].buffer, sizeof(clientStates[slot].buffer));
 				if (bytes_read <= 0) {
 					close(fd);
@@ -164,7 +162,7 @@ int main(int argc, char* argv[]) {
 	employee_t* employees = NULL; // same here
 
 	// add a colon to the flag if it has data (optarg)
-	while ((c = getopt(argc, argv, "nf:la:u:d:")) != -1) {
+	while ((c = getopt(argc, argv, "nf:la:u:d:p:")) != -1) {
 		switch(c) {
 			case 'n': // single quotes because they are char and not a string literals (array of chars)
 				newfile = true;
@@ -183,6 +181,9 @@ int main(int argc, char* argv[]) {
 				break;
 			case 'd':
 				deleteID = atoi(optarg);
+				break;
+			case 'p':
+				port = atoi(optarg);
 				break;
 			case '?':
 				printf("Unknown option -%c\n", c);

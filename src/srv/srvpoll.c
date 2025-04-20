@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -6,13 +7,29 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#include "common.h"
 #include "srvpoll.h"
 
 void handle_client_fsm(dbheader_t* dbhdr, employee_t* employees, clientstate_t* client) {
 	dbproto_hdr_t* hdr = (dbproto_hdr_t*)client->buffer;
 
-	if (client->state == STATE_HELLO) {
+	hdr->type = ntohl(hdr->type);
+	hdr->len = ntohs(hdr->len);
 
+	if (client->state == STATE_HELLO) {
+		if (hdr->type != MSG_HELLO_REQ || hdr->len != 1) {
+			printf("Didn't get MSG_HELLO in HELLO state\n");
+			// TODO send err message
+		}
+
+		dbproto_hello_req* hello = (dbproto_hello_req*)&hdr[1];
+		hello->proto = ntohs(hello->proto);
+		if (hello->proto != PROTO_VER) {
+			printf("Protocol mismatch\n");
+			// TODO send err message
+		}
+
+		client->state = STATE_MSG;
 	}
 
 	if (client->state == STATE_MSG) {
