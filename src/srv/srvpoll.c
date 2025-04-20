@@ -10,6 +10,22 @@
 #include "common.h"
 #include "srvpoll.h"
 
+void fsm_reply_hello(clientstate_t* client, dbproto_hdr_t* hdr) {
+	hdr->type = htonl(MSG_HELLO_RESP);
+	hdr->len = htons(1);
+	dbproto_hello_req* hello = (dbproto_hello_req*)&hdr[1];
+	hello->proto = htons(PROTO_VER);
+
+	write(client->fd, hdr, sizeof(dbproto_hdr_t) + sizeof(dbproto_hello_resp));
+}
+
+void fsm_reply_hello_err(clientstate_t* client, dbproto_hdr_t* hdr) {
+	hdr->type = htonl(MSG_ERROR);
+	hdr->len = htons(0);
+
+	write(client->fd, hdr, sizeof(dbproto_hdr_t));
+}
+
 void handle_client_fsm(dbheader_t* dbhdr, employee_t* employees, clientstate_t* client) {
 	dbproto_hdr_t* hdr = (dbproto_hdr_t*)client->buffer;
 
@@ -26,10 +42,13 @@ void handle_client_fsm(dbheader_t* dbhdr, employee_t* employees, clientstate_t* 
 		hello->proto = ntohs(hello->proto);
 		if (hello->proto != PROTO_VER) {
 			printf("Protocol mismatch\n");
-			// TODO send err message
+			fsm_reply_hello_err(client, hdr);
+			return;
 		}
 
+		fsm_reply_hello(client, hdr);
 		client->state = STATE_MSG;
+		printf("Client upgraded to STATE_MSG\n");
 	}
 
 	if (client->state == STATE_MSG) {

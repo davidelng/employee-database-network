@@ -8,8 +8,8 @@ SRC_CLI = $(wildcard src/cli/*.c)
 OBJ_CLI = $(SRC_CLI:src/cli/%.c=obj/cli/%.o)
 
 run: clean default
-	./$(TARGET_SRV) -f ./mynewdb.db -n -p 8080 &
-	./$(TARGET_CLI) 127.0.0.1
+	./$(TARGET_SRV) -f ./mynewdb.db -n -p 5555 &
+	./$(TARGET_CLI) -h 127.0.0.1 -p 5555
 	kill -9 $$(pidof dbserver)
 
 default: $(TARGET_SRV) $(TARGET_CLI)

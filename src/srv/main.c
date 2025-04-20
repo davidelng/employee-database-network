@@ -112,7 +112,7 @@ void poll_loop(unsigned short port, dbheader_t* dbhdr, employee_t* employees) {
 				close(conn_fd);
 			} else {
 				clientStates[freeSlot].fd = conn_fd;
-				clientStates[freeSlot].state = STATE_CONNECTED;
+				clientStates[freeSlot].state = STATE_HELLO;
 				nfds++;
 				printf("Slot %d has fd %d\n", freeSlot, clientStates[freeSlot].fd);
 			}
@@ -149,7 +149,7 @@ void poll_loop(unsigned short port, dbheader_t* dbhdr, employee_t* employees) {
 int main(int argc, char* argv[]) { 
 
 	int c = 0;
-	int port = 8080;
+	int port = 5555;
 	bool newfile = false;
 	char* filepath = NULL;
 	bool list = false;
